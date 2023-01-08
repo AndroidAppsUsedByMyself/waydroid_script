@@ -418,8 +418,13 @@ def install_magisk():
     extract_to = "/tmp/magisk_unpack"
     sys_image_mount = "/tmp/waydroidimage"
     magisk_dir = os.path.join(sys_image_mount, "system", "etc", "init", "magisk")
-    arch_dir = "x86" if "x86" in platform.machine() else "arm"
-    arch = "_64" if "64" in platform.machine() else ""
+    arch = platform.architecture()[0][0:2]
+    machine = platform.machine()
+    if "x86" not in machine:
+        if arch == "64":
+            machine = "arm64-v8a"
+        else:
+            machine = "armeabi-v7a"
     init_rc_component = """
 on post-fs-data
     start logd
@@ -452,7 +457,7 @@ on property:init.svc.zygote=restarting
    
 on property:init.svc.zygote=stopped
     exec - root root -- /sbin/magisk --zygote-restart
-    """.format(arch=32 if arch=="" else 64)
+    """.format(arch=arch)
     
     system_img = os.path.join(get_image_dir(), "system.img")
     if not os.path.isfile(system_img):
@@ -489,7 +494,7 @@ on property:init.svc.zygote=stopped
     print("==> Installing magisk now ...")
 
     
-    lib_dir = os.path.join(extract_to, "lib", "{arch_dir}{arch}".format(arch_dir=arch_dir, arch=arch))
+    lib_dir = os.path.join(extract_to, "lib", machine)
     for parent, dirnames, filenames in os.walk(lib_dir):
         for filename in filenames:
             o_path = os.path.join(lib_dir, filename)  
