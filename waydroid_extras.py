@@ -23,6 +23,26 @@ print(download_loc)
 if not os.path.exists(download_loc):
     os.makedirs(download_loc)
 
+def host():
+    machine = platform.machine()
+
+    mapping = {
+        "i686": ("x86", 32),
+        "x86_64": ("x86_64", 64),
+        "aarch64": ("arm64-v8a", 64),
+        "armv7l": ("armeabi-v7a", 32),
+        "armv8l": ("armeabi-v7a", 32)
+    }
+    if machine in mapping:
+        if mapping[machine] == "x86_64":
+            with open("/proc/cpuinfo") as f:
+                if "sse4_2" not in f.read():
+                    print("x86_64 CPU does not support SSE4.2, falling back to x86...")
+                    return ("x86", 32)
+        return mapping[machine]
+    raise ValueError("platform.machine '" + machine + "'"
+                     " architecture is not supported")
+
 
 def run(args):
     result = subprocess.run(args=args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -430,13 +450,7 @@ def install_magisk():
     extract_to = "/tmp/magisk_unpack"
     sys_image_mount = "/tmp/waydroidimage"
     magisk_dir = os.path.join(sys_image_mount, "system", "etc", "init", "magisk")
-    arch = platform.architecture()[0][0:2]
-    machine = platform.machine()
-    if "x86" not in machine:
-        if arch == "64":
-            machine = "arm64-v8a"
-        else:
-            machine = "armeabi-v7a"
+    machine = host()
     init_rc_component = """
 on post-fs-data
     start logd
@@ -472,7 +486,7 @@ on property:init.svc.zygote=restarting
    
 on property:init.svc.zygote=stopped
     exec u:r:su:s0 root root -- /sbin/magisk --auto-selinux --zygote-restart
-    """.format(arch=arch)
+    """.format(arch=machine[1])
     
     system_img = os.path.join(get_image_dir(), "system.img")
     if not os.path.isfile(system_img):
@@ -509,7 +523,7 @@ on property:init.svc.zygote=stopped
     print("==> Installing magisk now ...")
 
     
-    lib_dir = os.path.join(extract_to, "lib", machine)
+    lib_dir = os.path.join(extract_to, "lib", machine[0])
     for parent, dirnames, filenames in os.walk(lib_dir):
         for filename in filenames:
             o_path = os.path.join(lib_dir, filename)  
