@@ -23,20 +23,35 @@ print(download_loc)
 if not os.path.exists(download_loc):
     os.makedirs(download_loc)
 
+
 def run(args):
-    try:
-        result = subprocess.run(args=args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        result.check_returncode()
-    except subprocess.CalledProcessError as e:
-        print("\nOutput: ", e.stderr.decode("utf-8") )
-        raise
+    result = subprocess.run(args=args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if result.stderr:
+        print(result.stderr.decode("utf-8"))
+        raise subprocess.CalledProcessError(
+                    returncode = result.returncode,
+                    cmd = result.args,
+                    stderr = result.stderr
+                )
+    return result
+
+def umount(mount_point, exists=True):
+    if not os.path.exists(mount_point):
+        if not exists:
+            return
+        print("==> {} does not exist!".format(mount_point))
+        raise FileNotFoundError()
+    if not run(["mountpoint", mount_point]).returncode:
+        run(["umount", mount_point])
+    else:
+        print("==> Warning: {} is not a mount point".format(mount_point))
 
 def stop_waydroid():
     print("==> Stopping waydroid and unmounting already mounted images...")
     run(["waydroid", "container", "stop"])
-    run(["umount", "/var/lib/waydroid/rootfs/vendor/waydroid.prop"])
-    run(["umount", "/var/lib/waydroid/rootfs/vendor]"])
-    run(["umount", "/var/lib/waydroid/rootfs"])
+    umount("/var/lib/waydroid/rootfs/vendor/waydroid.prop", False)
+    umount("/var/lib/waydroid/rootfs/vendor", False)
+    umount("/var/lib/waydroid/rootfs")
 
 def download_file(url, f_name):
     md5 = ""
@@ -73,11 +88,7 @@ def get_image_dir():
 
 def mount_image(image, mount_point):
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["losetup", "-D"], stderr=subprocess.STDOUT)
-        subprocess.check_output(["umount", mount_point], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
+    umount(mount_point, False)
     if not os.path.exists(mount_point):
         os.makedirs(mount_point)
     try:
@@ -190,10 +201,7 @@ def install_gapps():
                 for ccdir in common_content_dirs:
                     shutil.copytree(os.path.join(extract_to, "appunpack", app_name, "common", ccdir), os.path.join(sys_image_mount, "system", ccdir), dirs_exist_ok=True)
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["umount", sys_image_mount], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
+    umount(sys_image_mount)
     print("==> OpenGapps installation complete try re init /restarting waydroid")
     print("==> Please note, google apps wont be usable without device registration !, Use --get-android-id for registration instructions")
 
@@ -310,10 +318,7 @@ on property:ro.enable.native.bridge.exec=1
 
     # Unmount and exit
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["umount", sys_image_mount], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
+    umount(sys_image_mount)
 
     print("==> libndk translation installed ! Restart waydroid service to apply changes !")
 
@@ -415,11 +420,8 @@ on property:ro.enable.native.bridge.exec=1
 
     # Unmount and exit
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["umount", sys_image_mount], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
-
+    umount(sys_image_mount)
+    
     print("==> libhoudini translation installed ! Restart waydroid service to apply changes !")
 
 def install_magisk():
@@ -534,10 +536,7 @@ on property:init.svc.zygote=stopped
 
     # Unmount and exit
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["umount", sys_image_mount], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
+    umount(sys_image_mount)
 
     print("==> Magisk was  installed ! Restart waydroid service to apply changes !")
     
@@ -588,10 +587,7 @@ def install_widevine():
     shutil.copytree(os.path.join(extract_to, "vendor_google_proprietary_widevine-prebuilt-chromeos_hatch", "prebuilts"), vendor_image_mount, dirs_exist_ok=True)
     
     print("==> Unmounting .. ")
-    try:
-        subprocess.check_output(["umount", vendor_image_mount], stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        print("==> Warning: umount failed.. {} ".format(str(e.output.decode())))
+    umount(vendor_image_mount)
 
     print("==> Widevine installed ! Restart waydroid service to apply changes !")
     
