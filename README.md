@@ -53,7 +53,10 @@ Please use `Direct Install into system partition` to update Magisk in Magisk man
 
 ## Install libndk arm translation 
 
-This may or may not work properly and is only for testing:
+libndk_translation from guybrush firmware.
+
+libndk seems to have better performance than libhoudini on AMD.
+
 Open terminal and switch to directory where "waydroid_extras.py" is located then run:
 
     sudo python3 waydroid_extras.py -n
@@ -63,7 +66,12 @@ Then restart waydroid service with command below :
 
 ## Install libhoudini arm translation
 
-This may or may not work properly and is only for testing: ( Much stable than libndk ) and works on android 11 images
+Intel's libhoudini for intel/AMD x86 CPU, pulled from Microsoft's WSA 11 image
+
+houdini version: 11.0.1b_y.38765.m
+
+houdini64 version: 11.0.1b_z.38765.m
+
 Open terminal and switch to directory where "waydroid_extras.py" is located then run:
 
     sudo python3 waydroid_extras.py -l
