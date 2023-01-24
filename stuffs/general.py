@@ -130,3 +130,6 @@ class General:
             self.start()
             self.extra2()
         Logger.info("Installation finished")
+
+    def uninstall(self):
+        pass
