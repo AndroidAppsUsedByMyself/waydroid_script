@@ -1,4 +1,5 @@
 import os
+import re
 import platform
 import subprocess
 import sys
@@ -17,16 +18,19 @@ def get_download_dir():
         os.makedirs(download_loc)
     return download_loc
 
-def run(args):
+def run(args, ignore=""):
     result = subprocess.run(args=args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     # print(result.stdout.decode())
     if result.stderr:
-        Logger.error(result.stderr.decode("utf-8"))
+        error = result.stderr.decode("utf-8")
+        if re.match(ignore, error):
+            return result
+        Logger.error(error)
         raise subprocess.CalledProcessError(
                     returncode = result.returncode,
                     cmd = result.args,
                     stderr = result.stderr
-                )
+        )
     return result
 
 def download_file(url, f_name):
