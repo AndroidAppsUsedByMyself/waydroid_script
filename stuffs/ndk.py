@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 from stuffs.general import General
@@ -31,6 +32,20 @@ on property:ro.enable.native.bridge.exec=1
     copy /system/etc/binfmt_misc/arm64_exe /proc/sys/fs/binfmt_misc/register
     copy /system/etc/binfmt_misc/arm64_dyn /proc/sys/fs/binfmt_misc/register
 """
+    files = [
+            "bin/arm",
+            "bin/arm64",
+            "bin/ndk_translation_program_runner_binfmt_misc",
+            "bin/ndk_translation_program_runner_binfmt_misc_arm64",
+            "etc/binfmt_misc",
+            "etc/ld.config.arm.txt",
+            "etc/ld.config.arm64.txt",
+            "etc/init/libndk.rc",
+            "lib/arm",
+            "lib64/arm64",
+            "lib/libndk*",
+            "lib64/libndk*"
+        ]
 
     def copy(self):
         run(["chmod", "+x", self.extract_to, "-R"])
@@ -42,3 +57,4 @@ on property:ro.enable.native.bridge.exec=1
             os.makedirs(os.path.dirname(init_path), exist_ok=True)
         with open(init_path, "w") as initfile:
             initfile.write(self.init_rc_component)
+        
